@@ -1,0 +1,21 @@
+Add subscription fee into opportunity.
+
+public class opportunityupdate Implements database.Batchable<sobject> {
+    
+    public database.QueryLocator start(database.BatchableContext bc){
+        return database.getQueryLocator([select id,name,subscripition_fee__c from opportunity]);
+    }
+    
+    public void execute(database.BatchableContext bc, list<opportunity> scope1){
+        
+        for(opportunity opp:scope1){
+            opp.subscripition_fee__c =1500;
+            }
+        update scope1;
+    }
+    
+    public void finish(database.BatchableContext bc){
+        
+    }
+
+}
