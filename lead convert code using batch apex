@@ -1,0 +1,26 @@
+public class leadconvert implements database.Batchable<sobject> {
+    
+    public database.QueryLocator start(database.BatchableContext bc){
+        return database.getQueryLocator([select id,firstname,lastname,company,isconverted from lead where isconverted = false]);
+    }
+    
+    public void execute(database.BatchableContext bc, list<lead> scope){
+        list<lead> listleads = new list<lead>();
+      list<database.LeadConvert> listlead =new list<database.LeadConvert>();
+        for(lead ld: scope){
+            ld.status = 'Closed - Converted'; 
+            database.LeadConvert rt = new database.LeadConvert();
+            rt.setDoNotCreateOpportunity(false);
+            rt.setLeadId(ld.id);
+            rt.setConvertedStatus(ld.status);
+             listlead.add(rt);
+        }
+        
+    database.convertLead(listlead);
+            
+        }
+    
+    public void finish(database.BatchableContext bc){
+        
+    }
+}
