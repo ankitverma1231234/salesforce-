@@ -1,0 +1,60 @@
+public class handlerleadconvert {
+
+    public static void converted(list<lead> acclist){
+       
+       list<id> llist= new list<id>();
+       
+        list<database.LeadConvert> listlead = new list<database.LeadConvert>(); 
+           for(lead ld: acclist){
+            if(ld.lleadconvert__c==true){
+             llist.add(ld.Id);
+                database.LeadConvert rt = new database.LeadConvert();
+                LeadStatus convertStatus = [SELECT Id, MasterLabel FROM LeadStatus WHERE IsConverted=true LIMIT 1];
+                rt.setLeadId(ld.Id);
+                 rt.setDoNotCreateOpportunity(false);
+                 rt.setConvertedStatus(convertStatus.MasterLabel);
+              listlead.add(rt);
+                     }
+                }
+        
+            database.convertLead(listlead);
+              futureclass.myfuturemethod(llist);
+    }
+}
+
+calling in future method
+
+public class futureclass {
+    @future
+    public static void myfuturemethod(list<Id> l_id){
+         
+        list<string> leadname=new list<string>();
+        list<string> campanyname=new list<string>();
+        id leadid;
+        list<Lead> ld_list=[select id,Lastname,Company from Lead where id =:l_id ];
+        for(Lead lobj:ld_list){
+            leadname.add(lobj.Lastname);
+            campanyname.add(lobj.Company);
+            leadid=lobj.id;
+        }
+        list<Account> acclist=[select id,name from account where name=:campanyname];
+        list<Contact> conlist=[select id,Lastname from contact where Lastname=:leadname];
+        list<Account> accs=new list<Account>();
+        list<Contact> upcon=new list<Contact>();
+        for(Account acc:acclist){
+            acc.Id__c= leadid;
+            accs.add(acc);
+        }
+        if(accs.size()>0){
+            database.update(accs);
+        }
+        for(Contact cobj:conlist){
+            cobj.Id__c= leadid;
+            upcon.add(cobj);
+        }
+        if(upcon.size()>0){
+            database.update(upcon);
+        }
+    }
+        
+    }
