@@ -1,0 +1,60 @@
+Insert Account in Apex class 
+
+public class createdefaultaccount {
+     public static void  insertAccAndCon()
+    {
+        list<id> acclist = new list<id>();
+        list<account> acclist1 = new list<account>();
+             Account acc = new Account();
+             acc.Name='default account12';
+            acclist1.add(acc);
+        insert acc;
+        acclist.add(acc.Id);
+        queue objclass= new  queue(acclist);
+        system.enqueueJob(objclass);
+       
+       
+    }
+}
+
+insert contact in queueable apex
+public class queue implements Queueable {
+     id getacc;
+    list<id> acclist=new list<id>();
+    public queue(list<id> accid){
+          getacc=accid[0];
+        acclist=accid;
+    }
+
+    public void execute(QueueableContext context){
+        Contact cobj=new Contact();
+        cobj.LastName='default test';
+        cobj.AccountId=getacc;
+        insert cobj;
+         opp1 objclass = new opp1(acclist);
+        system.enqueueJob(objclass);
+        
+    }
+
+}
+
+insert opportunity in queueable apex.
+
+public class opp1 implements Queueable {
+     id accountID;
+    public opp1(list<id> accid){
+         accountID=accid[0];
+    }
+    
+    
+    public void execute(QueueableContext context){
+          Opportunity obj=new Opportunity();
+        obj.AccountId=accountID;
+        obj.Name='default test';
+        obj.CloseDate=system.today();
+        obj.StageName='New';
+        insert obj;
+       
+    }
+
+}
