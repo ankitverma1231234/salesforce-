@@ -1,0 +1,59 @@
+public class updatecontactmailingAddress implements database.Batchable<sobject> {
+    public database.QueryLocator start(database.batchablecontext bc){
+        return database.getQueryLocator([select id,BillingStreet,BillingCity,BillingState,BillingPostalCode,(select id ,MailingStreet,MailingCity,MailingState,MailingPostalCode from contacts) from Account where BillingCountry= 'USA']);
+    }
+    
+    public void execute(database.BatchableContext bc,list<Account> acclist){
+        list<contact> conList = new list<contact>();
+        for(Account acc:acclist){
+            for(contact con: acc.contacts){
+                con.MailingStreet = acc.BillingStreet;
+                con.MailingCity = acc.BillingCity;
+                con.MailingState = acc.BillingState;
+                con.MailingPostalCode = acc.BillingPostalCode;
+                conList.add(con);
+            }
+            
+        }
+        update conList;
+    }
+    public void finish(database.BatchableContext bc){
+       
+    }
+
+}
+
+Test class
+
+@isTest
+public class updatecontactmailingAddressTest {
+    @isTest
+    
+    public static void mytestMethod(){
+        
+        List<Account> acclist = new List<Account>();
+        List<Contact> conlist = new List<Contact>();
+        
+        for(Integer i=0; i<5;i++){
+            Account acc = new Account(name='test'+i,billingcity='New York',billingcountry='USA');
+            acclist.add(acc);
+                    
+                }
+        insert acclist;
+        for(Account acc:acclist){
+            Contact con  = new Contact();
+            con.LastName ='test1';
+            con.AccountId = acc.Id;
+            conlist.add(con);
+                
+            }
+        insert conlist;
+        test.startTest();
+        updatecontactmailingAddress objprocess = new updatecontactmailingAddress();
+        database.executeBatch(objprocess );
+        test.stopTest();
+        
+        Integer countedcontact = [select count() from contact where MailingCity = 'New York'];
+        system.assertEquals(5, countedcontact);
+        }
+            }
