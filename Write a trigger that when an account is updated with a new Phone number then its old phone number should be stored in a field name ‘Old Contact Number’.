@@ -1,0 +1,26 @@
+public class updatephonenumber {
+    public static void myacc(List<Account> acclist,Map<id,Account> oldAccMap){
+        for(Account acc:acclist){
+        
+            if(acc.Phone!= oldAccMap.get(acc.Id).phone){
+                acc.Old_Contact_Numberr__c = oldAccMap.get(acc.Id).phone;
+                
+            }
+            
+        }
+        
+    }
+
+}
+*****************TRIGGER*******************************
+trigger phoneupdate on Account (before update) {
+    
+    if(trigger.isbefore){
+        if(trigger.isupdate){
+             updatephonenumber.myacc(trigger.new, trigger.oldMap);
+           
+            
+        }
+    }
+
+}
