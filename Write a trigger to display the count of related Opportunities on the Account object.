@@ -1,0 +1,23 @@
+public class countopportunity {
+    public static void myopp(List<Account> acclist){
+        List<opportunity> opplist = new List<opportunity>();
+        for(Account ac:acclist){
+            for(Integer i=0;i<ac.Related_contact__c;i++){
+                opplist.add(new opportunity(name='hemant'+i,stagename='closed-won', closeDate=system.today(),accountid=ac.Id));
+                
+            }
+        }
+       insert opplist;
+    }
+
+}
+*********************TRIGGER*************************************
+trigger countcontact on Account (after insert) {
+    if(trigger.isafter){
+        if(trigger.isinsert){
+             countopportunity.myopp(Trigger.new);
+        }
+    }
+    
+
+}
