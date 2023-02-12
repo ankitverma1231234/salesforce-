@@ -1,0 +1,26 @@
+public class countcontact {
+    public static void counted(List<Account> acclist){
+        List<contact> conlist = new List<contact>();
+        for(Account ac:acclist){
+            
+            for(Integer i=0;i<ac.Related_contact__c;i++){
+                conlist.add(new contact(lastname='company'+i,accountid=ac.Id));
+            }
+            
+        }
+        insert  conlist;
+        
+    }
+
+}
+
+**********************TRIGGER**************************
+trigger countcontact on Account (after insert) {
+    if(trigger.isafter){
+        if(trigger.isinsert){
+             countcontact.counted(Trigger.new);
+        }
+    }
+    
+
+}
