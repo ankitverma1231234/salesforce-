@@ -1,0 +1,23 @@
+public class opportunityexceed {
+    public static void myopp(List<opportunity> opplist){
+        for(opportunity opp:opplist){
+            if(opp.Amount>=100000 && opp.AccountId!=null){
+                opp.adderror('Amount can not exceeds 100000 per day');
+            }
+        }
+    }
+
+}
+
+
+
+*************TRIGGER******************
+trigger opportunityexceedTrigger on Opportunity (before insert) {
+    
+    if(trigger.isbefore){
+        if(trigger.isinsert){
+            opportunityexceed.myopp(Trigger.new);
+        }
+    }
+
+}
