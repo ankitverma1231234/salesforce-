@@ -1,0 +1,25 @@
+public class deleterecord {
+    
+    public static void parentdelete(List<Account> acclist){
+        set<id>accid = new set<id>();
+        for(Account acc:acclist){
+            accid.add(acc.Id);
+        }
+        
+         list<contact> listOfContacts=[select id from Contact where accountid in:accid];
+        delete  listOfContacts;
+        
+    }
+
+}
+
+***************************TRIGGER*****************************
+trigger deletechildtrigger on Account (before delete) {
+    
+    if(trigger.isbefore){
+        if(trigger.isdelete){
+            deleterecord.parentdelete(trigger.old);
+        }
+    }
+
+}
