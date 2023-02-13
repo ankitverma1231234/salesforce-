@@ -1,0 +1,38 @@
+public class updatecityfield {
+    public static void mycity(List<account> acclist,Map<id,account> oldaccMap){
+        List<opportunity> oppToupdate = new List<opportunity>();
+        Map<id,account> accMap = new Map<id,account>();
+        try{
+         for(account acc:acclist){
+             if(acc.city__c!= oldaccMap.get(acc.Id).city__c){
+                 accMap.put(acc.Id, acc);
+             }
+         }
+            if(!accMap.isEmpty()){
+                set<id> accIds = accMap.keySet();
+                  List<Opportunity> opplist = [Select Id , AccountId From Opportunity Where AccountId =:accIds];
+                if(!opplist.isEmpty()){
+                    for(opportunity opp:opplist){
+                          opp.city__c = accMap.get(opp.AccountId).city__c; 
+                        oppToupdate.add(opp);
+                    }
+                
+                    update oppToupdate;
+                    
+                }
+            }
+        }
+        
+        catch(Exception ex){
+            system.debug('error occur>='+ex.getMessage());
+        }
+    }
+}
+
+*********************************TRIGGER**********************************
+trigger accountfieldupdate on Account (after update) {
+    if(trigger.isafter && trigger.isupdate){
+        updatecityfield.mycity(Trigger.new, Trigger.oldMap);
+    }
+
+}
