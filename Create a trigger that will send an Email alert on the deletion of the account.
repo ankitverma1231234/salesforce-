@@ -1,0 +1,30 @@
+public class sendmail {
+    
+    public static void sendemailalert(List<Account> acclist){
+        List<Messaging.Email> emaillist = new List<Messaging.Email>();
+        for(Account acc:acclist){
+            
+            messaging.singleEmailmessage msg= new messaging.singleEmailMessage();
+        msg.setSubject('account is delete successfully');
+    list<string> sendtoAddress1=new list<string>{'ankit.verma@hicglobalsolutions.com'};
+        msg.setToAddresses(sendtoAddress1);
+        String body = 'Dear user,your account is delete successfully';
+        msg.setHtmlBody(body);
+        emaillist.add(msg);
+                  
+        }
+        messaging.sendEmail(emaillist);
+        
+    }
+
+}
+
+
+*************************TRIGGER**************************************
+trigger accountmessage on Account (after delete) {
+    
+    if(trigger.isafter && trigger.isdelete){
+         sendmail.sendemailalert(Trigger.old);
+    }
+
+}
