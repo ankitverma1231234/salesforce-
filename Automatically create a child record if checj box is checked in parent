@@ -1,0 +1,36 @@
+public class accountcheckbox {
+    public static void updateaccount(List<account> acclist){
+        List<contact> conlist = new List<contact>();
+        for(account ac:acclist){
+            if(ac.defaultcheckbox__c==true){
+                
+                contact con = new contact();
+                con.LastName = ac.Name;
+                con.Phone = ac.Phone;
+                con.AccountId =ac.Id;
+                conlist.add(con);
+                
+            }
+            
+            if(!conlist.isEmpty()){
+                insert conlist;
+            }
+            
+          }
+    }
+
+}
+
+***********************TRIGGER********************
+trigger convertTrigger on Account (after insert,after update) {
+    
+    if(trigger.isafter && trigger.isinsert){
+        accountcheckbox.updateaccount(Trigger.New);
+       
+    }
+    
+    if(trigger.isafter && trigger.isupdate){
+        accountcheckbox.updateaccount(Trigger.New);
+    }
+
+}
