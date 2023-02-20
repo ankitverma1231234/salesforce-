@@ -1,64 +1,46 @@
 public class ContentVersionhandler {
-    public static void createfile(List<ContentVersion> contentVersions){
-       list<ContentDistribution> distributionsToInsert = new List<ContentDistribution>();
-        string urlname;
-        id ContentDocument;
-        list<id> conid=new list<id>();
-        for(ContentVersion objContentVersion : contentVersions){
-            //if image uploaded then only create public link
-           if(objContentVersion.FileType.toLowerCase()=='png'){
-                ContentDocument=objContentVersion.ContentDocumentId;
-                system.debug('objContentVersion.FileExtension.toLowerCase():' + objContentVersion.FileType);
-                ContentDistribution newDist = new ContentDistribution();
-                newDist.ContentVersionId = objContentVersion.Id;
-                newDist.Name = 'External Link';
-                newDist.PreferencesNotifyOnVisit = false;
-                newDist.PreferencesAllowViewInBrowser = true;
-                newDist.PreferencesAllowOriginalDownload=true;
-                distributionsToInsert.add(newDist);
+    public static void creatversion(List<Contentversion> contentVersions){
+    string Image_url;
+        Id ContentDocId;
+        Id ContentVersionId;
+        try{
+            for(ContentVersion cv : contentVersions)
+            {
+                Image_url = cv.contentUrl;
+                ContentDocId = cv.ContentDocumentId;
+                ContentVersionId = cv.Id;
+            }
+            List<ContentDocumentLink> DoclinkList = [SELECT Id,LinkedEntityId,ContentDocumentId FROM ContentDocumentLink WHERE ContentDocumentId = :ContentDocId];
+             String contentDocumentUrl =  system.URL.getSalesforceBaseUrl().toExternalForm() + '/sfc/servlet.shepherd/version/renditionDownload?rendition=THUMB720BY480&versionId=' + ContentVersionId;
+            // https://your-community-domain-url/sfc/servlet.shepherd/version/renditionDownload?rendition=THUMB720BY480&versionId=<ContentVersionId>
+            System.debug('Content Document URL =====>' + contentDocumentUrl);
+            List<Id> DoclinkId = new List<Id>() ;
+            String ContentDocumentLinkk;
+            for(contentDocumentLink conLink : DoclinkList)
+            {
+                DoclinkId.add(conLink.LinkedEntityId);
+                ContentDocumentLinkk = conLink.Id;
+            }
+            System.debug('Content Document Link =====>' + ContentDocumentLinkk);
+            if (DoclinkId != null) {
+                List<Contact> Contact_list = [SELECT Id, Name, new_image__c FROM Contact WHERE Id = :DoclinkId];
+                System.debug('Contact===>' + Contact_list);
+                List<Contact> conlist = new List<Contact>();
+                for(Contact con : Contact_list)
+                {
+                    con.new_image__c = contentDocumentUrl;
+                    conlist.add(con);
+                }
+                update conlist;
             }
         }
-        if(!distributionsToInsert.isEmpty())
-        {
-            insert distributionsToInsert;
-            urlname=distributionsToInsert[0].DistributionPublicUrl;
-            system.debug('distributionsToInsert id'+distributionsToInsert[0].id);
-            system.debug('distributionsToInsert id'+distributionsToInsert[0].DistributionPublicUrl);
+        catch(Exception ex){
+            system.debug('Error Occur ==>' +ex.getMessage() + ex.getLineNumber());
         }
-         list<ContentDistribution> distributionsurl =[select id, DistributionPublicUrl from ContentDistribution where id=:distributionsToInsert[0].id];
-        system.debug('ddistributionsurl'+distributionsurl);
-        system.debug('ddistributionsurl ContentDocument'+ContentDocument);
-        list<contentdocumentlink> linklist=[select id,LinkedEntityId,contentdocumentid from contentdocumentlink where contentdocumentid=:ContentDocument];
-        system.debug('ddistributionsurl ContentDocument linklist'+linklist);
-        for(ContentDistribution obj:distributionsurl){
-            urlname=obj.DistributionPublicUrl;
-            system.debug('urlname'+urlname);
-        }
-             //linklist[0].clear();
-        system.debug('linklist'+linklist);
-       //conid=linklist[1].LinkedEntityId;
-        for(contentdocumentlink linkobj:linklist){
-           conid.add(linkobj.LinkedEntityId);
-        }
-        system.debug('conid'+conid);
-        list<Contact> clist=[select id,lastname,new_image__c from contact where id=:conid];
-        system.debug('clist'+clist);
-        list<Contact> updatelist=new list<Contact>();
-        for(Contact cobj:clist){
-            cobj.new_image__c= urlname;
-            system.debug('cobj'+cobj);
-            updatelist.add(cobj);
-        }
-        if(!updatelist.isEmpty()){
-            database.update(updatelist);
-        }
-        system.debug('updatelist'+updatelist);
-    }
+	}
 }
 
-
-
-            *********************************************** TRIGGER***************************************************************************
+*********************************************** TRIGGER***************************************************************************
 trigger mycontenttrigger on ContentVersion (after insert) {
     if(trigger.isafter){
         if(trigger.isinsert){
