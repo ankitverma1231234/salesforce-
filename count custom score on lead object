@@ -1,0 +1,65 @@
+public class leadscore {
+    public static void myscore(list<lead> listlead){
+        List<Leadscore__c> leadlist =Leadscore__c.getall().values();
+        
+        Map<String,decimal> nationality = new Map<String,decimal>();
+        Map<String,decimal> budget = new Map<String,decimal>();
+        Map<String,decimal> startingdate = new Map<String,decimal>();
+        for(Leadscore__c score :leadlist){
+            if(score.Nationality__c!=null && score.Nationality_score__c!=null){
+                nationality.put(score.Nationality__c,score.Nationality_score__c);
+            }
+            
+            if(score.Budget__c!=null && score.Budget_score__c!=null){
+                budget.put(score.Budget__c,score.Budget_score__c);
+            }
+            
+            if(score.Starting_Date__c!=null && score.Budget_score__c!=null){
+                startingdate.put(score.Starting_Date__c ,score.Starting_Date_score__c);
+            }
+           
+        }
+        
+        for(lead ld:listlead){
+             Decimal totalscore = 0;
+            if(ld.Nationality__c != null && nationality.containskey(ld.Nationality__c)){
+                
+                totalscore += nationality.get(ld.Nationality__c)*0.4;
+                
+            }
+            
+            if(ld.Budget__c!=null && budget.containskey(ld.Budget__c)){
+                totalscore += budget.get(ld.Budget__c)*0.35;
+            }
+            if(ld.Starting_Date__c!=null && startingdate.containskey(ld.Starting_Date__c)){
+                totalscore += budget.get(ld.Budget__c)*0.25;
+            }
+            ld.score__c = totalscore;
+        }
+    }
+
+}
+
+
+**********************TRIGGER***********************
+trigger countscoretrigger on Lead (before insert,before update) {
+    
+    if(trigger.isbefore && trigger.isinsert){
+        leadscore.myscore(trigger.new);
+    }
+    if(trigger.isbefore && trigger.isupdate){
+        try{
+            for(lead lead:trigger.new){
+                lead oldLead = trigger.oldMap.get(lead.Id);
+                if((oldLead.Nationality__c != lead.Nationality__c) || (oldLead.Budget__c!= lead.Budget__c) || (oldLead.Starting_Date__c != lead.Starting_Date__c)){
+                     leadscore.myscore(trigger.new);
+                }
+                
+            }
+        }
+        catch(Exception ex){
+            system.debug('error occuer==>'+ex.getMessage());
+        }
+    }
+
+}
