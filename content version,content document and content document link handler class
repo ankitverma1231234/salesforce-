@@ -1,12 +1,12 @@
 public class ContentVersionhandler {
-    public static void creatversion(List<Contentversion> contentVersions){
-    string Image_url;
+    public static void createfile(List<Contentversion> contentVersions){
+   // string Image_url;
         Id ContentDocId;
         Id ContentVersionId;
         try{
             for(ContentVersion cv : contentVersions)
             {
-                Image_url = cv.contentUrl;
+               // Image_url = cv.contentUrl;
                 ContentDocId = cv.ContentDocumentId;
                 ContentVersionId = cv.Id;
             }
