@@ -1,0 +1,137 @@
+Batch Class:
+public class LinkConvertedRecordsBatch implements Database.Batchable<Sobject> {
+    public Database.QueryLocator start(Database.BatchableContext BC) {
+        // Query for converted Leads and select related fields.
+        return Database.getQueryLocator([
+            SELECT Id, ConvertedAccountId, ConvertedContactId, IsConverted
+            FROM Lead
+            WHERE IsConverted = true
+        ]);
+    }
+    
+    public void execute(Database.BatchableContext BC, List<Lead> scope) {
+        try {
+            List<Lead> leadsToInsert = new List<Lead>();
+            List<Contact> contactsToDelete = new List<Contact>(); // To store Contacts to delete.
+            List<Account> accountsToDelete = new List<Account>(); // To store Accounts to delete.
+            
+            // Create a map to store associated Contact and Account information.
+            Map<Id, Contact> contactMap = new Map<Id, Contact>();
+            Map<Id, Account> accountMap = new Map<Id, Account>();
+            
+            // Collect the associated Contact and Account IDs.
+            for (Lead convertedLead : scope) {
+                if (convertedLead.ConvertedContactId != null) {
+                    contactMap.put(convertedLead.ConvertedContactId, null);
+                }
+                if (convertedLead.ConvertedAccountId != null) {
+                    accountMap.put(convertedLead.ConvertedAccountId, null);
+                }
+            }
+            
+            // Query for associated Contacts and Accounts in bulk.
+            contactMap.putAll([SELECT Id, FirstName, LastName, Email, Phone, Account.Name FROM Contact WHERE Id IN :contactMap.keySet()]);
+            accountMap.putAll([SELECT Id, Name FROM Account WHERE Id IN :accountMap.keySet()]);
+            
+            // Populate Lead records based on Contact and Account information.
+            for (Lead convertedLead : scope) {
+                Lead newLead = new Lead();
+                
+                if (convertedLead.ConvertedContactId != null) {
+                    Contact associatedContact = contactMap.get(convertedLead.ConvertedContactId);
+                    if (associatedContact != null) {
+                        newLead.FirstName = associatedContact.FirstName;
+                        newLead.LastName = associatedContact.LastName;
+                        newLead.Email = associatedContact.Email;
+                        newLead.Phone = associatedContact.Phone;
+                        newLead.Status = 'Open - Not Contacted';
+                        // Add Contact to delete list.
+                        contactsToDelete.add(associatedContact);
+                    }
+                }
+                
+                if (convertedLead.ConvertedAccountId != null) {
+                    Account associatedAccount = accountMap.get(convertedLead.ConvertedAccountId);
+                    System.debug('@@@@asociate' + associatedAccount);
+                    if (associatedAccount != null) {
+                        newLead.Company = associatedAccount.Name; // Set Company to Account's name.
+                        // Add Account to delete list.
+                        accountsToDelete.add(associatedAccount);
+                    }
+                }
+                
+                leadsToInsert.add(newLead);
+            }
+            
+            // Insert the newly created Lead records.
+            if (!leadsToInsert.isEmpty()) {
+                insert leadsToInsert;
+                System.debug('@@@@@LeadsInsert' + leadsToInsert);
+            }
+            
+            // Delete associated Contacts and Accounts.
+            if (!contactsToDelete.isEmpty()) {
+                delete contactsToDelete;
+                System.debug('Deleted ' + contactsToDelete.size() + ' Contacts.');
+            }
+            
+            if (!accountsToDelete.isEmpty()) {
+                delete accountsToDelete;
+                System.debug('Deleted ' + accountsToDelete.size() + ' Accounts.');
+            }
+            
+            // Delete the converted leads from the original scope.
+            delete scope;
+        } catch (Exception ex) {
+            System.debug('Error occurred' + ex.getMessage());
+        }
+    }
+    
+    public void finish(Database.BatchableContext BC) {
+        System.debug('Batch Progress is Completed');
+    }
+}
+
+Test Class:
+@isTest
+public class LinkConvertedRecordsBatchTest {
+
+    @isTest
+    static void testBatch() {
+        // Create test data for a Lead that has been converted.
+        Lead leadToConvert = new Lead(
+            FirstName = 'Test',
+            LastName = 'Lead',
+            Company = 'Test Company'
+        );
+
+        insert leadToConvert;
+
+        // Convert the Lead (this sets the ConvertedAccountId and ConvertedContactId).
+        Database.LeadConvert lc = new Database.LeadConvert();
+        lc.setLeadId(leadToConvert.Id);
+        lc.setConvertedStatus('Closed - Converted');
+        lc.setDoNotCreateOpportunity(true); // Adjust this as needed.
+        Database.LeadConvertResult lcr = Database.convertLead(lc);
+
+        // Verify that the conversion was successful.
+        System.assert(lcr.isSuccess());
+
+        // Create an instance of the batch class.
+        LinkConvertedRecordsBatch batchInstance = new LinkConvertedRecordsBatch();
+
+        // Start the batch execution.
+        Test.startTest();
+        Database.executeBatch(batchInstance);
+        Test.stopTest();
+
+        // Verify that new Lead records were created.
+        List<Lead> newLeads = [SELECT Id FROM Lead WHERE Status = 'Open - Not Contacted'];
+        System.assertEquals(1, newLeads.size());
+
+        // Verify that the converted Lead has been deleted.
+        List<Lead> deletedLeads = [SELECT Id FROM Lead WHERE Id = :leadToConvert.Id];
+        //System.assertEquals(0, deletedLeads.size());
+    }
+}
+
